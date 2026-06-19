@@ -14,6 +14,10 @@ on:
         description: 'Dry run (true/false)'
         required: false
         default: 'false'
+      threshold:
+        description: 'Approval threshold override (leave empty to use config default)'
+        required: false
+        default: ''
 
 jobs:
   harvest:
@@ -45,6 +49,7 @@ jobs:
               echo "days=7" >> $GITHUB_OUTPUT
             fi
             echo "dry_run=" >> $GITHUB_OUTPUT
+            echo "threshold=" >> $GITHUB_OUTPUT
           else
             echo "days=${{ github.event.inputs.days || '7' }}" >> $GITHUB_OUTPUT
             DRY_RUN=${{ github.event.inputs.dry_run || 'false' }}
@@ -52,6 +57,12 @@ jobs:
               echo "dry_run=--dry-run" >> $GITHUB_OUTPUT
             else
               echo "dry_run=" >> $GITHUB_OUTPUT
+            fi
+            THRESHOLD="${{ github.event.inputs.threshold }}"
+            if [ -n "$THRESHOLD" ]; then
+              echo "threshold=--threshold $THRESHOLD" >> $GITHUB_OUTPUT
+            else
+              echo "threshold=" >> $GITHUB_OUTPUT
             fi
           fi
 
@@ -61,7 +72,8 @@ jobs:
         run: |
           python -m harvester.main \
             --days ${{ steps.params.outputs.days }} \
-            ${{ steps.params.outputs.dry_run }}
+            ${{ steps.params.outputs.dry_run }} \
+            ${{ steps.params.outputs.threshold }}
 
       - name: Commit updated ledger
         run: |
