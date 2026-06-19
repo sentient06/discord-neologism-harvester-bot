@@ -18,7 +18,7 @@ from .harvest import Ledger, harvest_channel
 from .formatter import format_harvest_report
 
 
-async def run(days: int, dry_run: bool = False):
+async def run(days: int, dry_run: bool = False, threshold_override: int | None = None):
     # ── Load config ───────────────────────────────────────────────
     config_path = Path("config.json")
     if not config_path.exists():
@@ -32,7 +32,7 @@ async def run(days: int, dry_run: bool = False):
         sys.exit(1)
 
     guild_id = config["guild_id"]
-    threshold = config.get("approval_threshold", 3)
+    threshold = threshold_override if threshold_override is not None else config.get("approval_threshold", 3)
     approval_names = config.get("approval_emojis", [])
     output_channel = config.get("output_channel_id", "")
     since = datetime.now(timezone.utc) - timedelta(days=days)
@@ -97,9 +97,10 @@ def main():
     parser = argparse.ArgumentParser(description="Harvest neologisms from Discord")
     parser.add_argument("--days", type=int, default=7, help="Look back N days (default: 7)")
     parser.add_argument("--dry-run", action="store_true", help="Print results without posting")
+    parser.add_argument("--threshold", type=int, default=None, help="Override approval threshold (default: from config)")
     args = parser.parse_args()
 
-    asyncio.run(run(args.days, args.dry_run))
+    asyncio.run(run(args.days, args.dry_run, args.threshold))
 
 
 if __name__ == "__main__":
