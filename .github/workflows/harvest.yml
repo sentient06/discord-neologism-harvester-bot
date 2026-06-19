@@ -1,0 +1,72 @@
+name: Harvest Neologisms
+
+on:
+  schedule:
+    # Weekly harvest: every Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Number of days to look back'
+        required: false
+        default: '7'
+      dry_run:
+        description: 'Dry run (true/false)'
+        required: false
+        default: 'false'
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Determine harvest parameters
+        id: params
+        run: |
+          # For scheduled runs, use day-of-month to decide weekly vs monthly
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            DAY_OF_MONTH=$(date +%d)
+            # On the 1st of the month, do a 28-day review
+            if [ "$DAY_OF_MONTH" -le 7 ]; then
+              echo "days=28" >> $GITHUB_OUTPUT
+            else
+              echo "days=7" >> $GITHUB_OUTPUT
+            fi
+            echo "dry_run=" >> $GITHUB_OUTPUT
+          else
+            echo "days=${{ github.event.inputs.days || '7' }}" >> $GITHUB_OUTPUT
+            DRY_RUN=${{ github.event.inputs.dry_run || 'false' }}
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "dry_run=--dry-run" >> $GITHUB_OUTPUT
+            else
+              echo "dry_run=" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Run harvest
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: |
+          python -m harvester.main \
+            --days ${{ steps.params.outputs.days }} \
+            ${{ steps.params.outputs.dry_run }}
+
+      - name: Commit updated ledger
+        run: |
+          git config user.name "Harvester Bot"
+          git config user.email "harvester-bot@users.noreply.github.com"
+          git add harvested.json
+          git diff --cached --quiet || git commit -m "Update harvest ledger [skip ci]"
+          git push

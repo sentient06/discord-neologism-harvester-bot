@@ -1,0 +1,14 @@
+{
+  "channels": {
+    "neologisms": {
+      "id": "1517606837321732197",
+      "description": "Neologism discussion channel"
+    }
+  },
+  "output_channel_id": "",
+  "approval_emojis": ["faenorel", "morfaenorel"],
+  "approval_threshold": 3,
+  "harvest_days_weekly": 7,
+  "harvest_days_monthly": 28,
+  "guild_id": "1517593564542930994"
+}
