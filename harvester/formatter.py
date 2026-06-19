@@ -39,7 +39,7 @@ def _format_post(post: HarvestedPost, earmark: bool = False) -> str:
     """Format a single post entry."""
     prefix = "🔖 " if earmark else "• "
     neo_str = ", ".join(f"**{n}**" for n in post.neologisms) if post.neologisms else ""
-    author_str = f"by *{post.author}*"
+    author_str = f"by <@{post.author_id}>"
 
     parts = [prefix]
     if neo_str:
