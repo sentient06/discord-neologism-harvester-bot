@@ -74,9 +74,10 @@ async def run(days: int, dry_run: bool = False, threshold_override: int | None =
                 print("\n--- DRY RUN OUTPUT ---")
                 print(report)
                 print("--- END ---\n")
-            elif output_channel:
-                await client.post_message(output_channel, report)
-                print(f"  → Report posted to output channel")
+            else:
+                target = output_channel if output_channel else ch_id
+                await client.post_message(target, report)
+                print(f"  → Report posted to #{ch_key}")
 
             # Mark new posts in ledger
             for p in posts:
